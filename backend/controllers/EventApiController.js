@@ -6,38 +6,39 @@ module.exports = {
    deleteEvent,
 };
 
-async function createEvent(req,res) {
-    const {title, date, description, location, totalInvitation, requiredvolunteer} = req.body;
-    try{
-        if(!title || !date || !description || !location || !totalInvitation || !requiredvolunteer){
-            return res.status(400).json({status:false,message: "All fields are required:"});
-        }
-        const existingEvent = await Event.findOne({title});
-        if(existingEvent){
-            return res.status(400).json({status:false,message:"Title is already in use:"});
+async function createEvent(req, res) {
+    const { title, date, description, location, totalInvitation, requiredvolunteer } = req.body;
+    try {
+        if (!title || !date || !description || !location || !totalInvitation || !requiredvolunteer) {
+            return res.status(400).json({ status: false, message: "All fields are required" });
         }
 
-         const imagePath = req.file ? `/uploads/${req.file.filename}` : '';
-            console.log(req.file,"req.file")
-        
-            const event = await Event.create({
-              title,
-              description,
-              location,
-              totalInvitation,
-              requiredvolunteer,
-              date: date || new Date(), 
-              image: imagePath, 
-            });
-        
+        const existingEvent = await Event.findOne({ title });
+        if (existingEvent) {
+            return res.status(400).json({ status: false, message: "Title is already in use" });
+        }
 
-        await Event.create(req.body);
-        return res.status(200).json({status:true,message:"Event created successfully:",event});
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : '/defaults/event-default.jpg';
+
+        const event = await Event.create({
+            title,
+            description,
+            location,
+            totalInvitation,
+            requiredvolunteer,
+            date: date || new Date(),
+            image: imagePath,
+        });
+
+        return res.status(201).json({ status: true, message: "Event created successfully", event });
+    } catch (error) {
+        console.error("Error creating event:", error); 
+        return res.status(500).json({ 
+            status: false, 
+            message: "Internal server error",
+            error: error.message
+        });
     }
-    catch(error){
-        return res.status(500).json({status:false,message:"Internal server error:"});   
-    }
-   
 }
 
 async function indexEvent(req,res) {
@@ -46,6 +47,7 @@ async function indexEvent(req,res) {
         if(!event || event.length == 0){
             return res.status(400).json({status:false,message:"No Event Found:"});
         }
+        console.log(event,"event")
         return res.status(200).json({status:true,data:event});
     }
     catch(error){

@@ -28,6 +28,11 @@ const ContactUsFormSchema = new Schema({
         required: true,
         default: false,
     },
+},
+{
+        timestamps: { createdAt: "created_at",
+            updatedAt: false
+         },
 })
 
 const ContactUsForm = mongoose.model('contactusform',ContactUsFormSchema);
