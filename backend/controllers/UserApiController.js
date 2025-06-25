@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const randomString = require('randomstring');
 const global = require('../helper/GlobalHelper');
 
+
 module.exports = {
   // index,
   // login,
@@ -13,35 +14,54 @@ module.exports = {
   editprofile,
   updateprofile,
   destroy,
+  logout,
 
 };
 
 async function register(req, res) {
   const { name, email, password, phoneno, role, location, type } = req.body;
+  console.log(req.body,"gggg")
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   try {
     if (!name || !email || !password) {
-      return res.status(400).json({ status: false, message: "Name, email, and password are required." });
+      return res.status(400).json({
+        status: false,
+        message: "Name, email, and password are required.",
+      });
     }
 
     if (type === "full" || role === "volunteer") {
       if (!phoneno || !role) {
-        return res.status(400).json({ status: false, message: "Phone number and role are required." });
+        return res.status(400).json({
+          status: false,
+          message: "Phone number and role are required.",
+        });
       }
 
       if (role === "volunteer" && !location) {
-        return res.status(400).json({ status: false, message: "Location is required for volunteers." });
+        return res.status(400).json({
+          status: false,
+          message: "Location is required for volunteers.",
+        });
       }
-    }
-    if (phoneno.length !== 10) {
-      return res.status(400).json({ status: false, message: "Invalid phone number. Must be a 10 digits number." });
+
+      if (phoneno.length !== 10 || !/^\d+$/.test(phoneno)) {
+        return res.status(400).json({
+          status: false,
+          message: "Invalid phone number. Must be 10 digits.",
+        });
+      }
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(401).json({ status: false, message: "Email is already in use" });
+      return res.status(401).json({
+        status: false,
+        message: "Email is already in use",
+      });
     }
 
     if (!passwordRegex.test(password)) {
@@ -52,16 +72,34 @@ async function register(req, res) {
       });
     }
 
-    req.body.password = await bcrypt.hash(password, 10);
-    await User.create(req.body);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    return res.status(200).json({ status: true, message: "User registered successfully." });
+    const imagepath = req.file ? `uploads/${req.file.filename}` : "";
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      phoneno,
+      role,
+      location,
+      type,
+      image:imagepath,
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "User registered successfully.",
+      user,
+    });
   } catch (err) {
-    console.log("Registration Error:", err);
-    return res.status(500).json({ status: false, message: "Internal server error" });
+    console.error("Registration Error:", err);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
   }
 }
-
 
 async function index(req, res) {
   try {
@@ -79,7 +117,7 @@ async function index(req, res) {
 
 async function login(req, res) {
   const { email, password } = req.body;
-  console.log(req.body)
+  console.log(req.body,"loginiddd")
 
   if (!email || !password) {
     return res.status(400).json({ status: false, message: 'Email and password are required' });
@@ -136,7 +174,7 @@ async function editprofile(req, res) {
 
 async function updateprofile(req, res) {
   console.log(req.body, "body")
-  const { userId, email, phoneno, name, location } = req.body;
+  const { userId, email, phoneno, name, location ,password, image} = req.body;
   const updateData = { ...req.body };
 
   try {
@@ -169,3 +207,17 @@ async function destroy(req,res) {
   
 }
 
+async function logout(req,res) {
+  try{
+    await User.findByIdAndUpdate(req.userId,{token:""});
+    res.clearCookie('token',{
+      httpOnly: true,
+      secure:true,
+      sameSite: 'lax',
+    });
+    return res.status(200).json({status:true,message:"LogOut successfully"});
+  }
+  catch(error){
+    return res.status(500).json({status:false,message:"Internal server error:"});
+  }
+}

@@ -9,6 +9,7 @@ router.use('/api',require('./webinar'));
 router.use('/api',require('./seminar'));
 router.use('/api',require('./contactusform'));
 router.use('/api',require('./event'));
+router.use('/api',require('./usernotification'));
 
 
 module.exports = router;

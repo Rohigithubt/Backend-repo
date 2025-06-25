@@ -1,5 +1,6 @@
 const Webinar = require('../models/Webinar');
 const randomString = require('randomstring');
+const UserNotification = require('../models/UserNotification');
 
 module.exports = {
     createwebinar,
@@ -8,6 +9,7 @@ module.exports = {
     updatewebinar,
     deletewebinar,
 };
+
 
 async function createwebinar(req, res) {
     const { title, date, link, startTime, endTime } = req.body;
@@ -34,7 +36,16 @@ async function createwebinar(req, res) {
             image: imagepath,
         });
 
-        return res.status(200).json({ status: true, message: "Webinar created successfully", webinar });
+        const notification = await UserNotification.create({
+            name: `New webinar created: ${title}`,
+            isDeleted: false,
+        });
+
+        return res.status(200).json({ 
+            status: true, 
+            message: "Webinar created successfully", 
+            webinar
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: false, message: "Internal server error" });
