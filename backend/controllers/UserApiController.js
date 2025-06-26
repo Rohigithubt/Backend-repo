@@ -173,12 +173,25 @@ async function editprofile(req, res) {
 }
 
 async function updateprofile(req, res) {
-  console.log(req.body, "body")
-  const { userId, email, phoneno, name, location ,password, image} = req.body;
-  const updateData = { ...req.body };
-
+  console.log(req.body, req.file, "body and file");
+  const { userId, email, phoneno, name, location, password } = req.body;
+  
   try {
-    delete updateData.userId;
+    const updateData = {
+      name,
+      email,
+      phoneno,
+      location,
+      ...(password && { password })
+    };
+
+    if (req.file) {
+      updateData.image = `uploads/${req.file.filename}`;
+    }
+     if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
 
     const user = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
@@ -186,8 +199,7 @@ async function updateprofile(req, res) {
       return res.status(401).json({ status: false, error: 'user not found' });
     }
     res.status(200).json({ status: true, user });
-  }
-  catch(error){
+  } catch(error) {
     console.log(error);
     res.status(500).json({error: 'profile update failed'});
   }
@@ -209,7 +221,8 @@ async function destroy(req,res) {
 
 async function logout(req,res) {
   try{
-    await User.findByIdAndUpdate(req.userId,{token:""});
+    const userId = req.userId;
+    await User.findByIdAndUpdate(userId,{token:""});
     res.clearCookie('token',{
       httpOnly: true,
       secure:true,

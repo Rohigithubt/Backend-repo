@@ -37,7 +37,7 @@ async function createwebinar(req, res) {
         });
 
         const notification = await UserNotification.create({
-            name: `New webinar created: ${title}`,
+            name:`${title}`,
             isDeleted: false,
         });
 
